@@ -1,0 +1,17 @@
+Here is a example and the output.
+
+dgxuser@dgx11380:/lustre/exafs/client$ elbencho /lustre/exafs/client/perffiles/ --threads 1 --size 0 --files 1000000 --mkdirs --write --delfiles --deldirs --dirsharing --dryrun
+Phase: MKDIRS
+* Entries per thread: 1 | 0 K | 0 M
+* Entries total:      1 | 0 K | 0 M
+Phase: RMDIRS
+* Entries per thread: 1 | 0 K | 0 M
+* Entries total:      1 | 0 K | 0 M
+Phase: WRITE
+* Entries per thread: 1000000 | 1000 K | 1 M
+* Entries total:      1000000 | 1000 K | 1 M
+* Bytes per thread:   0 | 0 MiB | 0 GiB
+* Bytes total:        0 | 0 MiB | 0 GiB
+Phase: RMFILES
+* Entries per thread: 1000000 | 1000 K | 1 M
+* Entries total:      1000000 | 1000 K | 1 M
