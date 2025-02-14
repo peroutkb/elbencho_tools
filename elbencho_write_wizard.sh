@@ -107,7 +107,7 @@ DASHBOARD_IDS=(70 68 69 57)  # Elbencho-Peroutka, DGX-11380, DGX-11381, DDN-AI40
 
 # Check if GRAFANA_API_KEY is set; if not, prompt for it
 if [[ -z "$GRAFANA_API_KEY" ]]; then
-  read -sp "Enter your Grafana API key: " input_key
+  read -sp "Enter your Grafana API key to add annotations to Grafana: " input_key
   echo
   GRAFANA_API_KEY="$input_key"
 fi
