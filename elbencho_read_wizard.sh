@@ -86,7 +86,7 @@ if [[ -z "$GRAFANA_API_KEY" ]]; then
 fi
 
 # Construct and display the full command for confirmation
-EXAMPLE_CMD="elbencho \"${VOLUME_PATH}\" \
+EXAMPLE_CMD="elbencho ${VOLUME_PATH} \
 --livecsv stdout \
 --liveint 1000 \
 --read \
@@ -171,7 +171,7 @@ for THREADS in "${THREAD_LIST[@]}"; do
       echo "=========================================="
 
       # Construct and execute elbencho command
-      ELBENCHO_CMD="elbencho \"${VOLUME_PATH}\" \
+      ELBENCHO_CMD="elbencho ${VOLUME_PATH} \
 --livecsv stdout \
 --liveint 1000 \
 --read \
