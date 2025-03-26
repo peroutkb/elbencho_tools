@@ -61,8 +61,8 @@ read -e -p "Enter size (default: 1276m): " input_size
 SIZE=${input_size:-1276m}
 
 read -e -p "Enter volume path (default: /lustre/exafs/client/perfvolumes/perfvolume{1..1024}): " input_volume
-# Escape any braces in the input to prevent unwanted expansion
-VOLUME_PATH=$(echo "${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}" | sed 's/{/\\{/g; s/}/\\}/g')
+VOLUME_PATH="${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}"
+VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove any trailing brace if present
 
 read -e -p "Enter sleep time between runs in seconds (default: 120): " input_sleeptime
 SLEEP_TIME=${input_sleeptime:-120}
@@ -86,7 +86,7 @@ if [[ -z "$GRAFANA_API_KEY" ]]; then
 fi
 
 # Construct and display the full command for confirmation
-EXAMPLE_CMD="elbencho '${VOLUME_PATH}' \
+EXAMPLE_CMD="elbencho \"${VOLUME_PATH}\" \
 --livecsv stdout \
 --liveint 1000 \
 --read \
@@ -171,7 +171,7 @@ for THREADS in "${THREAD_LIST[@]}"; do
       echo "=========================================="
 
       # Construct and execute elbencho command
-      ELBENCHO_CMD="elbencho '${VOLUME_PATH}' \
+      ELBENCHO_CMD="elbencho \"${VOLUME_PATH}\" \
 --livecsv stdout \
 --liveint 1000 \
 --read \
