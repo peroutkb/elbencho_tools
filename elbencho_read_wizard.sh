@@ -123,7 +123,7 @@ echo "  Sleep Time: $SLEEP_TIME seconds"
 echo "  Hosts:      ${HOSTS:-None}"
 echo "  Dry Run:    $DRYRUN"
 echo ""
-echo "  Example Command:"
+echo "  Example Command for first run cycle:"
 echo "  $FULL_CMD"
 echo "=========================================="
 echo ""
@@ -160,63 +160,69 @@ run_elbencho_test() {
     fi
     
     # Display run details
-    echo "=========================================="
-    echo "Running test with:"
-    echo "  Threads:    $THREADS"
-    echo "  Block Size: $BLOCK_SIZE"
-    echo "  IOdepth:    $IODEPTH"
-    echo "  Start Time: $(date +"%Y%m%d%H%M%S")"
-    echo "=========================================="
-
-    # Build command options
-    local cmd_options=(
-        --livecsv stdout
-        --liveint 1000
-        --read
-        --rand
-        --direct
-        --block "$BLOCK_SIZE"
-        --size "$SIZE"
-        --threads "$THREADS"
-        --iodepth "$IODEPTH"
-        --infloop
-        --timelimit "$TIMELIMIT"
-    )
-
-    [[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
-    [[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
-
-    # Construct the commands
-    local elbencho_cmd="elbencho $VOLUME_PATH ${cmd_options[*]}"
-    local graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
-    local full_cmd="$elbencho_cmd | $graphite_cmd"
-
-    # Get the expanded command before execution
-    #local expanded_cmd
-    #expanded_cmd=$(eval "echo $full_cmd" 2>/dev/null)
-
-    #echo "Elbencho Command: $elbencho_cmd"
-    #echo "Full Command: $full_cmd"
-    echo "Full Command With Graphite Output: $full_cmd"
-    echo "----------------------------------------"
+    local run_timestamp=$(date +"%Y%m%d%H%M%S")
+    local run_dir="${run_timestamp}"
+    local log_file="${run_dir}/elbencho.log"
     
-    # Capture start time
-    local start_time="$(date +%s)000"
-    echo "----------------------------------------"
-    echo "Start Time (epoch): $start_time"
+    # Create directory for this run
+    mkdir -p "$run_dir"
     
-    if [[ "$DRYRUN" == true ]]; then
-        eval "$elbencho_cmd"
-    else
-        eval "$elbencho_cmd | $graphite_cmd"
-    fi
+    # Start logging
+    {
+        echo "=========================================="
+        echo "Running test with:"
+        echo "  Threads:    $THREADS"
+        echo "  Block Size: $BLOCK_SIZE"
+        echo "  IOdepth:    $IODEPTH"
+        echo "  Start Time: $run_timestamp"
+        echo "=========================================="
+
+        # Build command options
+        local cmd_options=(
+            --livecsv stdout
+            --liveint 1000
+            --read
+            --rand
+            --direct
+            --block "$BLOCK_SIZE"
+            --size "$SIZE"
+            --threads "$THREADS"
+            --iodepth "$IODEPTH"
+            --infloop
+            --timelimit "$TIMELIMIT"
+        )
+
+        [[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
+        [[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
+
+        # Construct the commands
+        local elbencho_cmd="elbencho $VOLUME_PATH ${cmd_options[*]}"
+        local graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
+        local full_cmd="$elbencho_cmd | $graphite_cmd"
+
+        echo "Full Command With Graphite Output: $full_cmd"
+        echo "----------------------------------------"
+        
+        # Capture start time
+        local start_time="$(date +%s)000"
+        echo "----------------------------------------"
+        echo "Start Time (epoch): $start_time"
+        
+        if [[ "$DRYRUN" == true ]]; then
+            eval "$elbencho_cmd"
+        else
+            eval "$elbencho_cmd | $graphite_cmd"
+        fi
+        
+        # Capture end time
+        local end_time="$(date +%s)000"
+        echo "End Time (epoch): $end_time"
+        echo "Duration (seconds): $(( (end_time - start_time) / 1000 ))"
+        echo "Test Completed"
+        echo "----------------------------------------"
+    } | tee "$log_file"
     
-    # Capture end time
-    local end_time="$(date +%s)000"
-    echo "End Time (epoch): $end_time"
-    echo "Duration (seconds): $(( (end_time - start_time) / 1000 ))"
-    echo "Test Completed"
-    echo "----------------------------------------"
+    echo "Log file created: $log_file"
     
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
