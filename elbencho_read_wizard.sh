@@ -148,7 +148,7 @@ send_grafana_annotation() {
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $GRAFANA_API_KEY" \
           -d "{\"dashboardId\": $DASHBOARD_ID, \"time\": $timestamp, \"isRegion\": false, \"tags\": [\"$tag\"], \"text\": \"$text\"}" \
-          "$GRAFANA_SERVER/api/annotations"
+          "$GRAFANA_SERVER/api/annotations" >/dev/null
     done
 }
 
