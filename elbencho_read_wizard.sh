@@ -232,8 +232,9 @@ run_elbencho_test() {
         echo "Full Command With Graphite Output: $full_cmd"
         echo "----------------------------------------"
         
-        # Capture start time
-        local start_time="$(date +%s)000"
+        # Capture start time with nanosecond precision and add a 5-second buffer before
+        local precise_start=$(date +%s%N)
+        local start_time=$(( (precise_start / 1000000000 - 5) * 1000 ))
         echo "----------------------------------------"
         echo "Start Time (epoch): $start_time"
         echo "----------------------------------------"
@@ -249,10 +250,11 @@ run_elbencho_test() {
         
         echo ""
         echo "----------------------------------------"
-        # Capture end time
-        local end_time="$(date +%s)000"
+        # Capture end time with nanosecond precision and add a 5-second buffer after
+        local precise_end=$(date +%s%N)
+        local end_time=$(( (precise_end / 1000000000 + 5) * 1000 ))
         echo "End Time (epoch): $end_time"
-        echo "Duration (seconds): $(( (end_time - start_time) / 1000 ))"
+        echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
         echo "Test Completed"
         echo "----------------------------------------"
     } | tee "$log_file"
@@ -261,7 +263,7 @@ run_elbencho_test() {
     
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
-        # Capture Grafana panel screenshots
+        # Capture Grafana panel screenshots with the buffered time window
         capture_grafana_panels "$run_dir" "$start_time" "$end_time"
         
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
