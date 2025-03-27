@@ -208,10 +208,11 @@ run_elbencho_test() {
         echo "----------------------------------------"
         echo "Start Time (epoch): $start_time"
         
+        # Execute command and capture output
         if [[ "$DRYRUN" == true ]]; then
-            eval "$elbencho_cmd"
+            eval "$elbencho_cmd" 2>&1
         else
-            eval "$elbencho_cmd | $graphite_cmd"
+            eval "$elbencho_cmd | $graphite_cmd" 2>&1
         fi
         
         # Capture end time
