@@ -191,15 +191,18 @@ run_elbencho_test() {
     local graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
     local full_cmd="$elbencho_cmd | $graphite_cmd"
 
-    echo "Executing: $elbencho_cmd"
-    echo "Full Command: $full_cmd"
-    
-    # Show the actual command after expansion
-    echo "Actual Command: $(eval "echo $full_cmd")"
+    # Get the expanded command before execution
+    local expanded_cmd
+    expanded_cmd=$(eval "echo $full_cmd" 2>/dev/null)
+
+    echo "Elbencho Command: $elbencho_cmd"
+    #echo "Full Command: $full_cmd"
+    echo "Full Command With Graphite Output: $expanded_cmd"
     echo "----------------------------------------"
     
     # Capture start time
     local start_time="$(date +%s)000"
+    echo "----------------------------------------"
     echo "Start Time (epoch): $start_time"
     
     if [[ "$DRYRUN" == true ]]; then
