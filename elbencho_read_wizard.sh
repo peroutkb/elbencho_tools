@@ -215,6 +215,7 @@ run_elbencho_test() {
     local end_time="$(date +%s)000"
     echo "End Time (epoch): $end_time"
     echo "Duration (seconds): $(( (end_time - start_time) / 1000 ))"
+    echo "Test Completed"
     echo "----------------------------------------"
     
     # Handle post-run tasks only for non-dry runs
