@@ -148,6 +148,35 @@ send_grafana_annotation() {
     done
 }
 
+# Function to capture Grafana panel screenshots
+capture_grafana_panels() {
+    local dir="$1"
+    local from="$2"
+    local to="$3"
+    local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo/b0b3d0e4-081b-44e7-8571-9e2fba555655"
+    local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
+    local common_params="orgId=1&width=1000&height=500&from=$from&to=$to"
+
+    # Panel configurations: id, name
+    local panels=(
+        "5:read_iops"
+        "7:read_throughput"
+        "8:read_latency"
+        "22:write_iops"
+        "24:write_throughput"
+        "23:write_latency"
+    )
+
+    echo "Capturing Grafana panel screenshots..."
+    for panel in "${panels[@]}"; do
+        IFS=: read -r panel_id name <<< "$panel"
+        local output_file="$dir/elbencho_${name}.png"
+        curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params" > "$output_file"
+        echo "Saved $output_file"
+    done
+    echo "Screenshot capture complete"
+}
+
 # Function to run elbencho test
 run_elbencho_test() {
     local THREADS="$1"
@@ -232,6 +261,9 @@ run_elbencho_test() {
     
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
+        # Capture Grafana panel screenshots
+        capture_grafana_panels "$run_dir" "$start_time" "$end_time"
+        
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
         sleep "$SLEEP_TIME"
     fi
