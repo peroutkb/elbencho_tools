@@ -192,12 +192,12 @@ run_elbencho_test() {
     local full_cmd="$elbencho_cmd | $graphite_cmd"
 
     # Get the expanded command before execution
-    local expanded_cmd
-    expanded_cmd=$(eval "echo $full_cmd" 2>/dev/null)
+    #local expanded_cmd
+    #expanded_cmd=$(eval "echo $full_cmd" 2>/dev/null)
 
-    echo "Elbencho Command: $elbencho_cmd"
+    #echo "Elbencho Command: $elbencho_cmd"
     #echo "Full Command: $full_cmd"
-    echo "Full Command With Graphite Output: $expanded_cmd"
+    echo "Full Command With Graphite Output: $full_cmd"
     echo "----------------------------------------"
     
     # Capture start time
