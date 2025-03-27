@@ -85,30 +85,26 @@ if [[ -z "$GRAFANA_API_KEY" ]]; then
   GRAFANA_API_KEY="$input_key"
 fi
 
-# Construct and display the full command for confirmation
-EXAMPLE_CMD="elbencho ${VOLUME_PATH} \
---livecsv stdout \
---liveint 1000 \
---read \
---rand \
---direct \
---block ${BLOCK_LIST[0]} \
---size $SIZE \
---threads ${THREAD_LIST[0]} \
---iodepth ${IODEPTH_LIST[0]} \
---infloop \
---timelimit $TIMELIMIT"
+# Build initial command options for example
+cmd_options=(
+    --livecsv stdout
+    --liveint 1000
+    --read
+    --rand
+    --direct
+    --block "${BLOCK_LIST[0]}"
+    --size "$SIZE"
+    --threads "${THREAD_LIST[0]}"
+    --iodepth "${IODEPTH_LIST[0]}"
+    --infloop
+    --timelimit "$TIMELIMIT"
+)
 
-if [[ -n "$HOSTS" ]]; then
-    EXAMPLE_CMD+=" \
---hosts $HOSTS"
-fi
+[[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
+[[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
 
-if [[ "$DRYRUN" == true ]]; then
-    EXAMPLE_CMD+=" \
---dryrun"
-fi
-
+# Construct example commands
+EXAMPLE_CMD="elbencho $VOLUME_PATH ${cmd_options[*]}"
 FULL_CMD="$EXAMPLE_CMD | ~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
 
 echo ""
@@ -152,26 +148,28 @@ send_grafana_annotation() {
     done
 }
 
-for THREADS in "${THREAD_LIST[@]}"; do
-  for BLOCK_SIZE in "${BLOCK_LIST[@]}"; do
-    for IODEPTH in "${IODEPTH_LIST[@]}"; do
-    
-      # Start annotation
-      if [[ "$DRYRUN" != true ]]; then
-          send_grafana_annotation "run_start" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
-      fi
-    
-      # Display run details
-      echo "=========================================="
-      echo "Running test with:"
-      echo "  Threads:    $THREADS"
-      echo "  Block Size: $BLOCK_SIZE"
-      echo "  IOdepth:    $IODEPTH"
-      echo "  Start Time: $(date +"%Y%m%d%H%M%S")"
-      echo "=========================================="
+# Function to run elbencho test
+run_elbencho_test() {
+    local THREADS="$1"
+    local BLOCK_SIZE="$2"
+    local IODEPTH="$3"
 
-      # Build command options
-      local cmd_options=(
+    # Start annotation
+    if [[ "$DRYRUN" != true ]]; then
+        send_grafana_annotation "run_start" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
+    fi
+    
+    # Display run details
+    echo "=========================================="
+    echo "Running test with:"
+    echo "  Threads:    $THREADS"
+    echo "  Block Size: $BLOCK_SIZE"
+    echo "  IOdepth:    $IODEPTH"
+    echo "  Start Time: $(date +"%Y%m%d%H%M%S")"
+    echo "=========================================="
+
+    # Build command options
+    local cmd_options=(
         --livecsv stdout
         --liveint 1000
         --read
@@ -183,29 +181,41 @@ for THREADS in "${THREAD_LIST[@]}"; do
         --iodepth "$IODEPTH"
         --infloop
         --timelimit "$TIMELIMIT"
-      )
+    )
 
-      [[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
-      [[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
+    [[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
+    [[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
 
-      # Construct the full command
-      local cmd=("elbencho" ${VOLUME_PATH} "${cmd_options[@]}")
-      local graphite_cmd=(~/elbencho_graphite/elbencho_graphite.sh -s "$GRAPHITE_SERVER" -t "$RUNTAG")
+    # Construct the commands
+    local elbencho_cmd="elbencho $VOLUME_PATH ${cmd_options[*]}"
+    local graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
+    local full_cmd="$elbencho_cmd | $graphite_cmd"
 
-      echo "Executing: ${cmd[*]}"
-      echo "Full Command: ${cmd[*]} | ${graphite_cmd[*]}"
+    echo "Executing: $elbencho_cmd"
+    echo "Full Command: $full_cmd"
     
-      if [[ "$DRYRUN" == true ]]; then
-          "${cmd[@]}"
-      else
-          "${cmd[@]}" | "${graphite_cmd[@]}"
-      fi
+    # Show the actual command after expansion
+    echo "Actual Command: $(eval "echo $full_cmd")"
+    echo "----------------------------------------"
     
-      # Handle post-run tasks only for non-dry runs
-      if [[ "$DRYRUN" != true ]]; then
-          send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
-          sleep "$SLEEP_TIME"
-      fi
+    if [[ "$DRYRUN" == true ]]; then
+        eval "$elbencho_cmd"
+    else
+        eval "$elbencho_cmd | $graphite_cmd"
+    fi
+    
+    # Handle post-run tasks only for non-dry runs
+    if [[ "$DRYRUN" != true ]]; then
+        send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
+        sleep "$SLEEP_TIME"
+    fi
+}
+
+# Main execution loop
+for THREADS in "${THREAD_LIST[@]}"; do
+    for BLOCK_SIZE in "${BLOCK_LIST[@]}"; do
+        for IODEPTH in "${IODEPTH_LIST[@]}"; do
+            run_elbencho_test "$THREADS" "$BLOCK_SIZE" "$IODEPTH"
+        done
     done
-  done
 done
