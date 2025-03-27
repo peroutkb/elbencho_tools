@@ -198,11 +198,21 @@ run_elbencho_test() {
     echo "Actual Command: $(eval "echo $full_cmd")"
     echo "----------------------------------------"
     
+    # Capture start time
+    local start_time="$(date +%s)000"
+    echo "Start Time (epoch): $start_time"
+    
     if [[ "$DRYRUN" == true ]]; then
         eval "$elbencho_cmd"
     else
         eval "$elbencho_cmd | $graphite_cmd"
     fi
+    
+    # Capture end time
+    local end_time="$(date +%s)000"
+    echo "End Time (epoch): $end_time"
+    echo "Duration (seconds): $(( (end_time - start_time) / 1000 ))"
+    echo "----------------------------------------"
     
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
