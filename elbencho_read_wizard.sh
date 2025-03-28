@@ -158,7 +158,7 @@ capture_grafana_panels() {
     local common_params="orgId=1&width=1000&height=500"
 
     # Debug time parameters
-    echo "Debug: from=$from to=$to" >> "$dir/elbencho.log"
+    echo "Debug: Received from=$from to=$to" >> "$dir/elbencho.log"
 
     # Panel configurations: id, name
     local panels=(
@@ -179,14 +179,14 @@ capture_grafana_panels() {
         for panel in "${panels[@]}"; do
             IFS=: read -r panel_id name <<< "$panel"
             local output_file="$dir/elbencho_${name}.png"
-            # Explicitly construct URL with time parameters
-            local time_params="from=${from}&to=${to}"
-            local full_url="${base_url}?panelId=${panel_id}&${common_params}&${time_params}"
-            local curl_cmd="curl -H \"${auth_header}\" \"${full_url}\" > ${output_file}"
+            # Build URL with explicit time parameters
+            local url="${base_url}?panelId=${panel_id}&${common_params}&from=${from}&to=${to}"
+            local cmd="curl -H \"${auth_header}\" \"${url}\" > \"${output_file}\""
             echo "Panel: $name"
-            echo "Command: $curl_cmd"
+            echo "Command: $cmd"
             echo ""
-            curl -s -H "${auth_header}" "${full_url}" > "${output_file}"
+            # Execute the curl command
+            eval "$cmd"
         done
         
         echo "Screenshot capture complete"
@@ -250,8 +250,8 @@ run_elbencho_test() {
         echo "----------------------------------------"
         
         # Capture start time with nanosecond precision and add a 5-second buffer before
-        local precise_start=$(date +%s%N)
-        local start_time=$(( (precise_start / 1000000000 - 5) * 1000 ))
+        precise_start=$(date +%s%N)
+        start_time=$(( (precise_start / 1000000000 - 5) * 1000 ))
         echo "----------------------------------------"
         echo "Start Time (epoch): $start_time"
         echo "----------------------------------------"
@@ -268,8 +268,8 @@ run_elbencho_test() {
         echo ""
         echo "----------------------------------------"
         # Capture end time with nanosecond precision and add a 5-second buffer after
-        local precise_end=$(date +%s%N)
-        local end_time=$(( (precise_end / 1000000000 + 5) * 1000 ))
+        precise_end=$(date +%s%N)
+        end_time=$(( (precise_end / 1000000000 + 5) * 1000 ))
         echo "End Time (epoch): $end_time"
         echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
         echo "Test Completed"
@@ -281,10 +281,8 @@ run_elbencho_test() {
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
         # Capture Grafana panel screenshots with the buffered time window
-        local grafana_start_time=$start_time
-        local grafana_end_time=$end_time
-        echo "Grafana time window: $grafana_start_time to $grafana_end_time" >> "$log_file"
-        capture_grafana_panels "$run_dir" "$grafana_start_time" "$grafana_end_time"
+        echo "Debug: Calling capture_grafana_panels with start=$start_time end=$end_time" >> "$log_file"
+        capture_grafana_panels "$run_dir" "$start_time" "$end_time"
         
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
         sleep "$SLEEP_TIME"
