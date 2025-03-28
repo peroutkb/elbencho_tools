@@ -157,6 +157,9 @@ capture_grafana_panels() {
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
     local common_params="orgId=1&width=1000&height=500"
 
+    # Debug time parameters
+    echo "Debug: from=$from to=$to" >> "$dir/elbencho.log"
+
     # Panel configurations: id, name
     local panels=(
         "5:read_iops"
@@ -176,12 +179,14 @@ capture_grafana_panels() {
         for panel in "${panels[@]}"; do
             IFS=: read -r panel_id name <<< "$panel"
             local output_file="$dir/elbencho_${name}.png"
-            local full_url="$base_url?panelId=$panel_id&$common_params&from=$from&to=$to"
-            local curl_cmd="curl -H \"$auth_header\" \"$full_url\" > $output_file"
+            # Explicitly construct URL with time parameters
+            local time_params="from=${from}&to=${to}"
+            local full_url="${base_url}?panelId=${panel_id}&${common_params}&${time_params}"
+            local curl_cmd="curl -H \"${auth_header}\" \"${full_url}\" > ${output_file}"
             echo "Panel: $name"
             echo "Command: $curl_cmd"
             echo ""
-            curl -s -H "$auth_header" "$full_url" > "$output_file"
+            curl -s -H "${auth_header}" "${full_url}" > "${output_file}"
         done
         
         echo "Screenshot capture complete"
@@ -276,7 +281,10 @@ run_elbencho_test() {
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
         # Capture Grafana panel screenshots with the buffered time window
-        capture_grafana_panels "$run_dir" "$start_time" "$end_time"
+        local grafana_start_time=$start_time
+        local grafana_end_time=$end_time
+        echo "Grafana time window: $grafana_start_time to $grafana_end_time" >> "$log_file"
+        capture_grafana_panels "$run_dir" "$grafana_start_time" "$grafana_end_time"
         
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
         sleep "$SLEEP_TIME"
