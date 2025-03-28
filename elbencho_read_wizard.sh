@@ -210,13 +210,15 @@ run_elbencho_test() {
         send_grafana_annotation "run_start" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
     fi
     
-    # Display run details
+    # Create directory for this run
     local run_timestamp=$(date +"%Y%m%d%H%M%S")
     local run_dir="${run_timestamp}"
     local log_file="${run_dir}/elbencho.log"
-    
-    # Create directory for this run
     mkdir -p "$run_dir"
+    
+    # Capture start time with nanosecond precision and add a 5-second buffer before
+    local precise_start=$(date +%s%N)
+    ELBENCHO_START_TIME=$(( (precise_start / 1000000000 - 5) * 1000 ))
     
     # Start logging
     {
@@ -253,10 +255,6 @@ run_elbencho_test() {
 
         echo "Full Command With Graphite Output: $full_cmd"
         echo "----------------------------------------"
-        
-        # Capture start time with nanosecond precision and add a 5-second buffer before
-        precise_start=$(date +%s%N)
-        ELBENCHO_START_TIME=$(( (precise_start / 1000000000 - 5) * 1000 ))
         echo "----------------------------------------"
         echo "Start Time (epoch): $ELBENCHO_START_TIME"
         echo "----------------------------------------"
@@ -272,14 +270,21 @@ run_elbencho_test() {
         
         echo ""
         echo "----------------------------------------"
-        # Capture end time with nanosecond precision and add a 5-second buffer after
-        precise_end=$(date +%s%N)
-        ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
         echo "End Time (epoch): $ELBENCHO_END_TIME"
         echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
         echo "Test Completed"
         echo "----------------------------------------"
     } | tee "$log_file"
+    
+    # Capture end time with nanosecond precision and add a 5-second buffer after
+    local precise_end=$(date +%s%N)
+    ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
+    
+    # Append timing information to the log file
+    echo "Final timing information:" >> "$log_file"
+    echo "Start Time (epoch): $ELBENCHO_START_TIME" >> "$log_file"
+    echo "End Time (epoch): $ELBENCHO_END_TIME" >> "$log_file"
+    echo "----------------------------------------" >> "$log_file"
     
     echo "Log file created: $log_file"
     
@@ -287,12 +292,8 @@ run_elbencho_test() {
     if [[ "$DRYRUN" != true ]]; then
         # Capture Grafana panel screenshots with the buffered time window
         echo "Debug: About to call capture_grafana_panels with $ELBENCHO_START_TIME and $ELBENCHO_END_TIME" >> "$log_file"
-        # Store the times in local variables to ensure they're passed correctly
-        local grafana_start="$ELBENCHO_START_TIME"
-        local grafana_end="$ELBENCHO_END_TIME"
-        echo "Debug: Local variables: grafana_start=$grafana_start grafana_end=$grafana_end" >> "$log_file"
-        # Call the function with the explicit parameters
-        capture_grafana_panels "$run_dir" "$grafana_start" "$grafana_end"
+        # Call the function with hardcoded parameters
+        capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
         
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
         sleep "$SLEEP_TIME"
