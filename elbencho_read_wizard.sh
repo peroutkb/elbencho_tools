@@ -155,7 +155,7 @@ capture_grafana_panels() {
     local to="$3"
     local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo/b0b3d0e4-081b-44e7-8571-9e2fba555655"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
-    local common_params="orgId=1&width=1000&height=500&from=$from&to=$to"
+    local common_params="orgId=1&width=1000&height=500"
 
     # Panel configurations: id, name
     local panels=(
@@ -176,11 +176,12 @@ capture_grafana_panels() {
         for panel in "${panels[@]}"; do
             IFS=: read -r panel_id name <<< "$panel"
             local output_file="$dir/elbencho_${name}.png"
-            local curl_cmd="curl -H \"$auth_header\" \"$base_url?panelId=$panel_id&$common_params\" > $output_file"
+            local full_url="$base_url?panelId=$panel_id&$common_params&from=$from&to=$to"
+            local curl_cmd="curl -H \"$auth_header\" \"$full_url\" > $output_file"
             echo "Panel: $name"
             echo "Command: $curl_cmd"
             echo ""
-            curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params" > "$output_file"
+            curl -s -H "$auth_header" "$full_url" > "$output_file"
         done
         
         echo "Screenshot capture complete"
