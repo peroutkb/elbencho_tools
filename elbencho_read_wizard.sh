@@ -155,12 +155,15 @@ send_grafana_annotation() {
 # Function to capture Grafana panel screenshots
 capture_grafana_panels() {
     local dir="$1"
+    local start_time="$2"
+    local end_time="$3"
     local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo/b0b3d0e4-081b-44e7-8571-9e2fba555655"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
     local common_params="orgId=1&width=1000&height=500"
 
-    # Debug time parameters
-    echo "Debug: Using ELBENCHO_START_TIME=$ELBENCHO_START_TIME ELBENCHO_END_TIME=$ELBENCHO_END_TIME" >> "$dir/elbencho.log"
+    # Debug time parameters - write to a separate debug file
+    echo "Debug: capture_grafana_panels received start_time=$start_time end_time=$end_time" > "$dir/debug.log"
+    echo "Debug: ELBENCHO_START_TIME=$ELBENCHO_START_TIME ELBENCHO_END_TIME=$ELBENCHO_END_TIME" >> "$dir/debug.log"
 
     # Panel configurations: id, name
     local panels=(
@@ -175,20 +178,20 @@ capture_grafana_panels() {
     {
         echo "----------------------------------------"
         echo "Capturing Grafana panel screenshots..."
-        echo "Time window: from=$ELBENCHO_START_TIME to=$ELBENCHO_END_TIME"
+        echo "Time window: from=$start_time to=$end_time"
         echo ""
         
         for panel in "${panels[@]}"; do
             IFS=: read -r panel_id name <<< "$panel"
             local output_file="$dir/elbencho_${name}.png"
-            # Build URL with explicit time parameters
-            local url="${base_url}?panelId=${panel_id}&${common_params}&from=${ELBENCHO_START_TIME}&to=${ELBENCHO_END_TIME}"
-            local cmd="curl -H \"${auth_header}\" \"${url}\" > \"${output_file}\""
+            
+            # Explicitly build the curl command with the time parameters hardcoded
             echo "Panel: $name"
-            echo "Command: $cmd"
+            echo "Command: curl -H \"$auth_header\" \"$base_url?panelId=$panel_id&$common_params&from=$start_time&to=$end_time\" > \"$output_file\""
             echo ""
-            # Execute the curl command
-            eval "$cmd"
+            
+            # Execute the curl command directly without eval
+            curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params&from=$start_time&to=$end_time" > "$output_file"
         done
         
         echo "Screenshot capture complete"
@@ -283,8 +286,13 @@ run_elbencho_test() {
     # Handle post-run tasks only for non-dry runs
     if [[ "$DRYRUN" != true ]]; then
         # Capture Grafana panel screenshots with the buffered time window
-        echo "Debug: Calling capture_grafana_panels with start=$ELBENCHO_START_TIME end=$ELBENCHO_END_TIME" >> "$log_file"
-        capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
+        echo "Debug: About to call capture_grafana_panels with $ELBENCHO_START_TIME and $ELBENCHO_END_TIME" >> "$log_file"
+        # Store the times in local variables to ensure they're passed correctly
+        local grafana_start="$ELBENCHO_START_TIME"
+        local grafana_end="$ELBENCHO_END_TIME"
+        echo "Debug: Local variables: grafana_start=$grafana_start grafana_end=$grafana_end" >> "$log_file"
+        # Call the function with the explicit parameters
+        capture_grafana_panels "$run_dir" "$grafana_start" "$grafana_end"
         
         send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
         sleep "$SLEEP_TIME"
