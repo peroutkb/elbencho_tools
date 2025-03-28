@@ -167,14 +167,25 @@ capture_grafana_panels() {
         "23:write_latency"
     )
 
-    echo "Capturing Grafana panel screenshots..."
-    for panel in "${panels[@]}"; do
-        IFS=: read -r panel_id name <<< "$panel"
-        local output_file="$dir/elbencho_${name}.png"
-        curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params" > "$output_file"
-        echo "Saved $output_file"
-    done
-    echo "Screenshot capture complete"
+    {
+        echo "----------------------------------------"
+        echo "Capturing Grafana panel screenshots..."
+        echo "Time window: from=$from to=$to"
+        echo ""
+        
+        for panel in "${panels[@]}"; do
+            IFS=: read -r panel_id name <<< "$panel"
+            local output_file="$dir/elbencho_${name}.png"
+            local curl_cmd="curl -H \"$auth_header\" \"$base_url?panelId=$panel_id&$common_params\" > $output_file"
+            echo "Panel: $name"
+            echo "Command: $curl_cmd"
+            echo ""
+            curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params" > "$output_file"
+        done
+        
+        echo "Screenshot capture complete"
+        echo "----------------------------------------"
+    } | tee -a "$dir/elbencho.log"
 }
 
 # Function to run elbencho test
