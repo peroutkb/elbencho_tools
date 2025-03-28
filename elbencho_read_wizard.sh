@@ -33,11 +33,14 @@ EOF
 echo "Welcome to the Elbencho Read Test Wizard"
 echo ""
 
-# Check for --dryrun flag
+# Check for --dryrun flag or --help flag
 DRYRUN=false
 for arg in "$@"; do
   if [[ "$arg" == "--dryrun" ]]; then
     DRYRUN=true
+  elif [[ "$arg" == "-h" || "$arg" == "--help" ]]; then
+    usage
+    exit 0  
   fi
 done
 
