@@ -281,7 +281,7 @@ run_elbencho_test() {
         
         echo ""
         echo "----------------------------------------"
-        echo "End Time (epoch): $ELBENCHO_END_TIME"
+        echo "End Time (epoch): $precise_end"
         echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
         echo "Test Completed"
         echo "----------------------------------------"
@@ -291,7 +291,8 @@ run_elbencho_test() {
     local precise_end=$(date +%s%N)
     ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
 
-    # Calculate and log duration after capturing precise_end
+    # Log precise_end and calculate duration after capturing it
+    echo "End Time (epoch): $precise_end"
     echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
 
     # Append timing information to the log file
