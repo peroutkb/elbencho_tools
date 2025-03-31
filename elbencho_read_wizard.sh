@@ -66,13 +66,6 @@ SIZE=${input_size:-1276m}
 read -e -p "Enable Random Offsets? (Default: yes): " enable_rand
 enable_rand=${enable_rand:-yes}
 
-# Add or remove the --rand option based on the user's input
-if [[ "$enable_rand" == "no" ]]; then
-  cmd_options=("${cmd_options[@]/--rand}")
-else
-  cmd_options+=(--rand)
-fi
-
 read -e -p "Enter volume path (default: /lustre/exafs/client/perfvolumes/perfvolume{1..1024}): " input_volume
 VOLUME_PATH="${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}"
 VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove any trailing brace if present
@@ -98,26 +91,46 @@ if [[ -z "$GRAFANA_API_KEY" ]]; then
   GRAFANA_API_KEY="$input_key"
 fi
 
-# Build initial command options for example
-cmd_options=(
-    --livecsv stdout
-    --liveint 1000
-    --read
-    --direct
-    --block "${BLOCK_LIST[0]}"
-    --size "$SIZE"
-    --threads "${THREAD_LIST[0]}"
-    --iodepth "${IODEPTH_LIST[0]}"
-    --infloop
-    --timelimit "$TIMELIMIT"
-)
+# Build command options function - can be reused
+build_cmd_options() {
+    local threads="$1"
+    local block_size="$2"
+    local iodepth="$3"
+    
+    local options=(
+        --livecsv stdout
+        --liveint 1000
+        --read
+        --direct
+        --block "$block_size"
+        --size "$SIZE"
+        --threads "$threads"
+        --iodepth "$iodepth"
+        --infloop
+        --timelimit "$TIMELIMIT"
+    )
+    
+    # Add or remove the --rand option based on the user's input
+    if [[ "$enable_rand" == "yes" ]]; then
+        options+=(--rand)
+    fi
+    
+    # Add hosts if specified
+    [[ -n "$HOSTS" ]] && options+=(--hosts "$HOSTS")
+    
+    # Add dryrun if enabled
+    [[ "$DRYRUN" == true ]] && options+=(--dryrun)
+    
+    echo "${options[*]}"
+}
 
-[[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
-[[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
+# Build initial command options for example
+example_options=$(build_cmd_options "${THREAD_LIST[0]}" "${BLOCK_LIST[0]}" "${IODEPTH_LIST[0]}")
 
 # Construct example commands
-EXAMPLE_CMD="elbencho $VOLUME_PATH ${cmd_options[*]}"
-FULL_CMD="$EXAMPLE_CMD | ~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
+example_elbencho_cmd="elbencho $VOLUME_PATH $example_options"
+example_graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
+example_full_cmd="$example_elbencho_cmd | $example_graphite_cmd"
 
 echo ""
 echo "Please review the parameters for the first run cycle"
@@ -137,7 +150,7 @@ echo "  Hosts:      ${HOSTS:-None}"
 echo "  Dry Run:    $DRYRUN"
 echo ""
 echo "  Example Command for first run cycle:"
-echo "  $FULL_CMD"
+echo "  $example_full_cmd"
 echo "=========================================="
 echo ""
 read -e -p "Does this look correct? (y/n): " confirm
@@ -244,25 +257,10 @@ run_elbencho_test() {
         echo "=========================================="
 
         # Build command options
-        local cmd_options=(
-            --livecsv stdout
-            --liveint 1000
-            --read
-            --rand
-            --direct
-            --block "$BLOCK_SIZE"
-            --size "$SIZE"
-            --threads "$THREADS"
-            --iodepth "$IODEPTH"
-            --infloop
-            --timelimit "$TIMELIMIT"
-        )
-
-        [[ -n "$HOSTS" ]] && cmd_options+=(--hosts "$HOSTS")
-        [[ "$DRYRUN" == true ]] && cmd_options+=(--dryrun)
+        local cmd_options=$(build_cmd_options "$THREADS" "$BLOCK_SIZE" "$IODEPTH")
 
         # Construct the commands
-        local elbencho_cmd="elbencho $VOLUME_PATH ${cmd_options[*]}"
+        local elbencho_cmd="elbencho $VOLUME_PATH $cmd_options"
         local graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\""
         local full_cmd="$elbencho_cmd | $graphite_cmd"
 
