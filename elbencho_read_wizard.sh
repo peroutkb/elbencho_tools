@@ -63,6 +63,16 @@ TIMELIMIT=${input_timelimit:-120}
 read -e -p "Enter size (default: 1276m): " input_size
 SIZE=${input_size:-1276m}
 
+read -e -p "Enable Random Offsets? (Default: yes): " enable_rand
+enable_rand=${enable_rand:-yes}
+
+# Add or remove the --rand option based on the user's input
+if [[ "$enable_rand" == "no" ]]; then
+  cmd_options=("${cmd_options[@]/--rand}")
+else
+  cmd_options+=(--rand)
+fi
+
 read -e -p "Enter volume path (default: /lustre/exafs/client/perfvolumes/perfvolume{1..1024}): " input_volume
 VOLUME_PATH="${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}"
 VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove any trailing brace if present
@@ -93,7 +103,6 @@ cmd_options=(
     --livecsv stdout
     --liveint 1000
     --read
-    --rand
     --direct
     --block "${BLOCK_LIST[0]}"
     --size "$SIZE"
@@ -122,6 +131,7 @@ echo "  Runtag:     $RUNTAG"
 echo "  Time Limit: $TIMELIMIT seconds"
 echo "  Size:       $SIZE"
 echo "  Volume Path: ${VOLUME_PATH}"
+echo "  Random Offsets: $enable_rand"
 echo "  Sleep Time: $SLEEP_TIME seconds"
 echo "  Hosts:      ${HOSTS:-None}"
 echo "  Dry Run:    $DRYRUN"
@@ -298,16 +308,4 @@ run_elbencho_test() {
         # Call the function with hardcoded parameters
         capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
         
-        send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
-        sleep "$SLEEP_TIME"
-    fi
-}
-
-# Main execution loop
-for THREADS in "${THREAD_LIST[@]}"; do
-    for BLOCK_SIZE in "${BLOCK_LIST[@]}"; do
-        for IODEPTH in "${IODEPTH_LIST[@]}"; do
-            run_elbencho_test "$THREADS" "$BLOCK_SIZE" "$IODEPTH"
-        done
-    done
-done
+        send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdep
