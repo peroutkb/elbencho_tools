@@ -308,4 +308,16 @@ run_elbencho_test() {
         # Call the function with hardcoded parameters
         capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
         
-        send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdep
+        send_grafana_annotation "run_complete" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
+        sleep "$SLEEP_TIME"
+    fi
+}
+
+# Main execution loop
+for THREADS in "${THREAD_LIST[@]}"; do
+    for BLOCK_SIZE in "${BLOCK_LIST[@]}"; do
+        for IODEPTH in "${IODEPTH_LIST[@]}"; do
+            run_elbencho_test "$THREADS" "$BLOCK_SIZE" "$IODEPTH"
+        done
+    done
+done
