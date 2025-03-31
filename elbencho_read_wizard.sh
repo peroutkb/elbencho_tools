@@ -287,10 +287,13 @@ run_elbencho_test() {
         echo "----------------------------------------"
     } | tee "$log_file"
     
-    # Capture end time with nanosecond precision and add a 5-second buffer after
+    # Capture end time with nanosecond precision before calculating duration
     local precise_end=$(date +%s%N)
     ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
-    
+
+    # Calculate and log duration after capturing precise_end
+    echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))"
+
     # Append timing information to the log file
     echo "Final timing information:" >> "$log_file"
     echo "Start Time (epoch): $ELBENCHO_START_TIME" >> "$log_file"
