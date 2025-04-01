@@ -68,7 +68,6 @@ enable_rand=${enable_rand:-yes}
 
 read -e -p "Enter volume path (default: /lustre/exafs/client/perfvolumes/perfvolume{1..1024}): " input_volume
 VOLUME_PATH="${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}"
-VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove any trailing brace if present
 
 read -e -p "Enter sleep time between runs in seconds (default: 120): " input_sleeptime
 SLEEP_TIME=${input_sleeptime:-120}
