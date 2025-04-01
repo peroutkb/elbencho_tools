@@ -329,7 +329,7 @@ for THREADS in "${THREAD_LIST[@]}"; do
     done
 done
 
-# Ensure the volume path does not have an extra closing brace
+# Ensure the volume path does not have an extra closing brace bash not properly handling the closing brace
 if [[ "$VOLUME_PATH" == *"}" ]]; then
   VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove the trailing brace if present
 fi
