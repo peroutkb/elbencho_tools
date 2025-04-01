@@ -178,12 +178,14 @@ send_grafana_annotation() {
     done
 }
 
-# Function to capture Grafana panel screenshots
+# Updated function to dynamically use the dashboard UID for capturing Grafana panel screenshots
 capture_grafana_panels() {
     local dir="$1"
     local start_time="$2"
     local end_time="$3"
-    local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo/b0b3d0e4-081b-44e7-8571-9e2fba555655"
+
+    # Base URL for Grafana rendering
+    local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
     local common_params="orgId=1&width=1000&height=500"
 
@@ -191,14 +193,16 @@ capture_grafana_panels() {
     echo "Debug: capture_grafana_panels received start_time=$start_time end_time=$end_time" > "$dir/debug.log"
     echo "Debug: ELBENCHO_START_TIME=$ELBENCHO_START_TIME ELBENCHO_END_TIME=$ELBENCHO_END_TIME" >> "$dir/debug.log"
 
-    # Panel configurations: id, name
+    # Panel configurations: dashboard UID, panel id, name
     local panels=(
-        "5:read_iops"
-        "7:read_throughput"
-        "8:read_latency"
-        "22:write_iops"
-        "24:write_throughput"
-        "23:write_latency"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:read_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:read_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:8:read_latency"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:write_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:write_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:write_latency"
+        "d0d26a47-41af-4d12-9e82-a939639239ee:4:total_max_power"
+        "d0d26a47-41af-4d12-9e82-a939639239ee:2:power_metrics"
     )
 
     {
@@ -206,20 +210,22 @@ capture_grafana_panels() {
         echo "Capturing Grafana panel screenshots..."
         echo "Time window: from=$start_time to=$end_time"
         echo ""
-        
+
         for panel in "${panels[@]}"; do
-            IFS=: read -r panel_id name <<< "$panel"
+            IFS=: read -r dashboard_uid panel_id name <<< "$panel"
             local output_file="$dir/elbencho_${name}.png"
-            
-            # Explicitly build the curl command with the time parameters hardcoded
+
+            # Build the full URL for the panel
+            local panel_url="$base_url/$dashboard_uid?panelId=$panel_id&$common_params&from=$start_time&to=$end_time"
+
             echo "Panel: $name"
-            echo "Command: curl -H \"$auth_header\" \"$base_url?panelId=$panel_id&$common_params&from=$start_time&to=$end_time\" > \"$output_file\""
+            echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
             echo ""
-            
+
             # Execute the curl command directly without eval
-            curl -s -H "$auth_header" "$base_url?panelId=$panel_id&$common_params&from=$start_time&to=$end_time" > "$output_file"
+            curl -s -H "$auth_header" "$panel_url" > "$output_file"
         done
-        
+
         echo "Screenshot capture complete"
         echo "----------------------------------------"
     } | tee -a "$dir/elbencho.log"
