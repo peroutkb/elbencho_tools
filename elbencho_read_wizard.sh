@@ -66,8 +66,9 @@ SIZE=${input_size:-1276m}
 read -e -p "Enable Random Offsets? (Default: yes): " enable_rand
 enable_rand=${enable_rand:-yes}
 
+# Handle volume path input without any string manipulation
 read -e -p "Enter volume path (default: /lustre/exafs/client/perfvolumes/perfvolume{1..1024}): " input_volume
-VOLUME_PATH="${input_volume:-/lustre/exafs/client/perfvolumes/perfvolume{1..1024}}"
+VOLUME_PATH=${input_volume:-'/lustre/exafs/client/perfvolumes/perfvolume{1..1024}'}
 
 read -e -p "Enter sleep time between runs in seconds (default: 120): " input_sleeptime
 SLEEP_TIME=${input_sleeptime:-120}
@@ -328,8 +329,3 @@ for THREADS in "${THREAD_LIST[@]}"; do
         done
     done
 done
-
-# Ensure the volume path does not have an extra closing brace bash not properly handling the closing brace
-if [[ "$VOLUME_PATH" == *"}" ]]; then
-  VOLUME_PATH="${VOLUME_PATH%\}}"  # Remove the trailing brace if present
-fi
