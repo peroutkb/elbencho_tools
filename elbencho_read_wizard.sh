@@ -135,6 +135,10 @@ example_graphite_cmd="~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SE
 example_full_cmd="$example_elbencho_cmd | $example_graphite_cmd"
 
 echo ""
+# Add run description prompt before parameters review
+read -e -p "Enter a description for this run (optional): " run_description
+
+echo ""
 echo "Please review the parameters for the first run cycle"
 echo ""
 echo "=========================================="
@@ -150,10 +154,9 @@ echo "  Random Offsets: $enable_rand"
 echo "  Sleep Time: $SLEEP_TIME seconds"
 echo "  Hosts:      ${HOSTS:-None}"
 echo "  Dry Run:    $DRYRUN"
-echo ""
-echo "  Example Command for first run cycle:"
-echo "  $example_full_cmd"
-echo "=========================================="
+if [ -n "$run_description" ]; then
+    echo "  Description: $run_description"
+fi
 echo ""
 read -e -p "Does this look correct? (y/n): " confirm
 if [[ "$confirm" != "y" ]]; then
@@ -239,16 +242,25 @@ run_elbencho_test() {
     local BLOCK_SIZE="$2"
     local IODEPTH="$3"
 
-    # Start annotation
-    if [[ "$DRYRUN" != true ]]; then
-        send_grafana_annotation "run_start" "Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
-    fi
-    
     # Create directory for this run
     local run_timestamp=$(date +"%Y%m%d%H%M%S")
     local run_dir="${run_timestamp}"
     local log_file="${run_dir}/elbencho.log"
     mkdir -p "$run_dir"
+    
+    # Save run description to file if provided
+    if [ -n "$run_description" ]; then
+        echo "$run_description" > "${run_dir}/run_description.txt"
+    fi
+
+    # Start annotation
+    if [[ "$DRYRUN" != true ]]; then
+        local annotation_text="Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
+        if [ -n "$run_description" ]; then
+            annotation_text="$annotation_text - $run_description"
+        fi
+        send_grafana_annotation "run_start" "$annotation_text"
+    fi
     
     # Capture start time with nanosecond precision and add a 5-second buffer before
     local precise_start=$(date +%s%N)
