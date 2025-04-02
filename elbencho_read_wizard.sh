@@ -73,7 +73,7 @@ VOLUME_PATH=${input_volume:-'/lustre/exafs/client/perfvolumes/perfvolume{1..1024
 read -e -p "Enter sleep time between runs in seconds (default: 120): " input_sleeptime
 SLEEP_TIME=${input_sleeptime:-120}
 
-read -e -p "Enter hosts (comma-separated e.g. dgx11380.atcai.local,dgx11381.atcai.local, default: blank): " input_hosts
+read -e -p "Enter hosts (comma-separated e.g. dgx11380.atcai.local,dgx11381.atcai.local, default: blank will running locally): " input_hosts
 HOSTS=$(echo "$input_hosts" | tr ' ' ',')
 
 # Configuration
@@ -100,6 +100,8 @@ build_cmd_options() {
     local options=(
         --livecsv stdout
         --liveint 1000
+        --lat
+        --cpu
         --read
         --direct
         --block "$block_size"
