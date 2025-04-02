@@ -73,7 +73,7 @@ VOLUME_PATH=${input_volume:-'/lustre/exafs/client/perfvolumes/perfvolume{1..1024
 read -e -p "Enter sleep time between runs in seconds (default: 120): " input_sleeptime
 SLEEP_TIME=${input_sleeptime:-120}
 
-read -e -p "Enter hosts (comma-separated e.g. dgx11380.atcai.local,dgx11381.atcai.local, default: blank will running locally): " input_hosts
+read -e -p "Enter hosts (comma-separated e.g. dgx11380.atcai.local,dgx11381.atcai.local, default: blank will run locally): " input_hosts
 HOSTS=$(echo "$input_hosts" | tr ' ' ',')
 
 # Configuration
@@ -154,6 +154,11 @@ echo "  Random Offsets: $enable_rand"
 echo "  Sleep Time: $SLEEP_TIME seconds"
 echo "  Hosts:      ${HOSTS:-None}"
 echo "  Dry Run:    $DRYRUN"
+echo ""
+echo "  Example Command for first run cycle:"
+echo "  $example_full_cmd"
+echo "=========================================="
+echo ""
 if [ -n "$run_description" ]; then
     echo "  Description: $run_description"
 fi
@@ -256,9 +261,6 @@ run_elbencho_test() {
     # Start annotation
     if [[ "$DRYRUN" != true ]]; then
         local annotation_text="Threads: $THREADS Block: $BLOCK_SIZE IOdepth: $IODEPTH"
-        if [ -n "$run_description" ]; then
-            annotation_text="$annotation_text - $run_description"
-        fi
         send_grafana_annotation "run_start" "$annotation_text"
     fi
     
