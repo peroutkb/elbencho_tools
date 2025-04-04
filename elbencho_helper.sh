@@ -71,20 +71,7 @@ RUNTAG=${input_runtag:-$(hostname)}
 # Add run description prompt
 read -e -p "Enter a description for this run (optional): " run_description
 
-# Show command review
-echo ""
-echo "Please review the parameters:"
-echo "=========================================="
-echo "Custom Command: $custom_command"
-echo "Run Tag: $RUNTAG"
-if [ -n "$run_description" ]; then
-    echo "Description: $run_description"
-fi
-echo "Dry Run: $DRYRUN"
-echo "=========================================="
-echo ""
-
-read -e -p "Does this look correct? (y/n): " confirm
+read -e -p "Ready to Run? (y/n): " confirm
 if [[ "$confirm" != "y" ]]; then
     echo "Aborting."
     exit 1
