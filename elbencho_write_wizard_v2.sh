@@ -137,12 +137,12 @@ build_cmd_options() {
     
     # Append time options if a time limit was provided
     if [[ -n "$TIME_OPTS" ]]; then
-        options+=" $TIME_OPTS"
+        options+=("$TIME_OPTS")
     fi
 
     # Append delfiles option if chosen
     if [[ -n "$DELFILES" ]]; then
-        options+=" $DELFILES"
+        options+=("$DELFILES")
     fi
     # Add hosts if specified
     [[ -n "$HOSTS" ]] && options+=(--hosts "$HOSTS")
