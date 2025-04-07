@@ -199,22 +199,23 @@ capture_grafana_panels() {
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
     local common_params="orgId=1&width=1000&height=500"
 
-    # Debug time parameters - write to a separate debug file
-    echo "Debug: capture_grafana_panels received start_time=$start_time end_time=$end_time" > "$dir/debug.log"
-    echo "Debug: ELBENCHO_START_TIME=$ELBENCHO_START_TIME ELBENCHO_END_TIME=$ELBENCHO_END_TIME" >> "$dir/debug.log"
-
     # Panel configurations: dashboard UID, panel id, name
     local panels=(
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:read_iops"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:read_throughput"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:8:read_latency"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:write_iops"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:write_throughput"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:write_latency"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:4:total_max_power"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:2:power_metrics"
-    )
-
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:elbencho_read_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:elbencho_read_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:8:elbencho_read_latency"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:elbencho_write_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:elbencho_write_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:elbencho_write_latency"
+        "d0d26a47-41af-4d12-9e82-a939639239ee:4:ddn_total_max_power"
+        "d0d26a47-41af-4d12-9e82-a939639239ee:2:ddn_power_metrics"
+        "95:2:dgx11380_cpu_load"
+        "95:10:dgx11380_ram_usage"
+        "95:1093-clone-3:dgx11380_network_enp170s0f1np1"
+        "95:1093-clone-5:dgx11380_network_enp41s0f1np1"
+        "95:1183:dgx11380_gpu_power_draw"
+        "95:1184:dgx11380_gpu_utilization"
+        "95:1185:dgx11380_gpu_mem_utilization")
     {
         echo "----------------------------------------"
         echo "Capturing Grafana panel screenshots..."
@@ -223,7 +224,7 @@ capture_grafana_panels() {
 
         for panel in "${panels[@]}"; do
             IFS=: read -r dashboard_uid panel_id name <<< "$panel"
-            local output_file="$dir/elbencho_${name}.png"
+            local output_file="$dir/${name}.png"
 
             # Build the full URL for the panel
             local panel_url="$base_url/$dashboard_uid?panelId=$panel_id&$common_params&from=$start_time&to=$end_time"
