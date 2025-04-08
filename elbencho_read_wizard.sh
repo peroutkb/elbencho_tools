@@ -207,11 +207,11 @@ capture_grafana_panels() {
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:elbencho_write_iops"
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:elbencho_write_throughput"
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:elbencho_write_latency"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:4:ddn_total_max_power"
         "d0d26a47-41af-4d12-9e82-a939639239ee:2:ddn_power_metrics"
         "95:2:dgx11380_cpu_load"
         "95:10:dgx11380_ram_usage"
         "95:1193:dgx11380_infiniband_Gbps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "95:1195:dgx11380_infiniband_GBps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
         "95:1183:dgx11380_gpu_power_draw"
         "95:1184:dgx11380_gpu_utilization"
         "95:1185:dgx11380_gpu_mem_utilization")
