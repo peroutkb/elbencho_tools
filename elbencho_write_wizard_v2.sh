@@ -224,9 +224,9 @@ capture_grafana_panels() {
     # Base URL for Grafana rendering
     local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
-    local common_params="orgId=1&width=1000&height=500"
+    local common_params="orgId=1&width=1000&height=750"
 
-    # Panel configurations: dashboard UID, panel id, name
+    # Panel configurations: dashboard UID, panel id, name, variables (optional)
     local panels=(
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:elbencho_read_iops"
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:elbencho_read_throughput"
@@ -234,12 +234,11 @@ capture_grafana_panels() {
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:elbencho_write_iops"
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:elbencho_write_throughput"
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:elbencho_write_latency"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:4:ddn_total_max_power"
         "d0d26a47-41af-4d12-9e82-a939639239ee:2:ddn_power_metrics"
         "95:2:dgx11380_cpu_load"
         "95:10:dgx11380_ram_usage"
-        #"95:1093-clone-3:dgx11380_network_enp170s0f1np1"
-        #"95:1093-clone-5:dgx11380_network_enp41s0f1np1"
+        "95:1193:dgx11380_infiniband_Gbps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "95:1195:dgx11380_infiniband_GBps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
         "95:1183:dgx11380_gpu_power_draw"
         "95:1184:dgx11380_gpu_utilization"
         "95:1185:dgx11380_gpu_mem_utilization")
@@ -250,11 +249,14 @@ capture_grafana_panels() {
         echo ""
 
         for panel in "${panels[@]}"; do
-            IFS=: read -r dashboard_uid panel_id name <<< "$panel"
+            IFS=: read -r dashboard_uid panel_id name variables <<< "$panel"
             local output_file="$dir/${name}.png"
 
-            # Build the full URL for the panel
+            # Build the full URL for the panel, including variables if they exist
             local panel_url="$base_url/$dashboard_uid?panelId=$panel_id&$common_params&from=$start_time&to=$end_time"
+            if [ -n "$variables" ]; then
+                panel_url="$panel_url&$variables"
+            fi
 
             echo "Panel: $name"
             echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
