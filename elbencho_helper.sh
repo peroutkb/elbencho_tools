@@ -71,15 +71,21 @@ RUNTAG=${input_runtag:-$(hostname)}
 # Add run description prompt
 read -e -p "Enter a description for this run (optional): " run_description
 
+# Add prompt for Grafana panel capture
+read -e -p "Do you want to capture Grafana panels? (y/n, default: n): " capture_panels
+capture_panels=${capture_panels:-n}
+
 read -e -p "Ready to Run? (y/n): " confirm
 if [[ "$confirm" != "y" ]]; then
     echo "Aborting."
     exit 1
 fi
 
-# Initialize global variables for timing
-ELBENCHO_START_TIME=""
-ELBENCHO_END_TIME=""
+# Initialize global variables for timing only if capturing panels
+if [[ "$capture_panels" == "y" ]]; then
+    ELBENCHO_START_TIME=""
+    ELBENCHO_END_TIME=""
+fi
 
 # Function to send Grafana annotations
 send_grafana_annotation() {
@@ -102,38 +108,53 @@ capture_grafana_panels() {
     local start_time="$2"
     local end_time="$3"
 
+    # Base URL for Grafana rendering
     local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
-    local common_params="orgId=1&width=1000&height=500"
+    local common_params="orgId=1&width=1000&height=750"
 
-    echo "Debug: capture_grafana_panels received start_time=$start_time end_time=$end_time" > "$dir/debug.log"
-
+    # Panel configurations: dashboard UID, panel id, name, variables (optional)
     local panels=(
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:read_iops"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:read_throughput"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:8:read_latency"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:write_iops"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:write_throughput"
-        "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:write_latency"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:4:total_max_power"
-        "d0d26a47-41af-4d12-9e82-a939639239ee:2:power_metrics"
-    )
-
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:elbencho_read_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:7:elbencho_read_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:8:elbencho_read_latency"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:22:elbencho_write_iops"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:24:elbencho_write_throughput"
+        "b0b3d0e4-081b-44e7-8571-9e2fba555655:23:elbencho_write_latency"
+        "d0d26a47-41af-4d12-9e82-a939639239ee:2:ddn_power_metrics"
+        "95:2:dgx11380_cpu_load"
+        "95:10:dgx11380_ram_usage"
+        "95:1193:dgx11380_infiniband_Gbps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "95:1195:dgx11380_infiniband_GBps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "95:1183:dgx11380_gpu_power_draw"
+        "95:1184:dgx11380_gpu_utilization"
+        "95:1185:dgx11380_gpu_mem_utilization")
     {
+        echo "----------------------------------------"
         echo "Capturing Grafana panel screenshots..."
         echo "Time window: from=$start_time to=$end_time"
         echo ""
 
         for panel in "${panels[@]}"; do
-            IFS=: read -r dashboard_uid panel_id name <<< "$panel"
-            local output_file="$dir/elbencho_${name}.png"
+            IFS=: read -r dashboard_uid panel_id name variables <<< "$panel"
+            local output_file="$dir/${name}.png"
+
+            # Build the full URL for the panel, including variables if they exist
             local panel_url="$base_url/$dashboard_uid?panelId=$panel_id&$common_params&from=$start_time&to=$end_time"
-            
+            if [ -n "$variables" ]; then
+                panel_url="$panel_url&$variables"
+            fi
+
+            echo "Panel: $name"
+            echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
+            echo ""
+
+            # Execute the curl command directly without eval
             curl -s -H "$auth_header" "$panel_url" > "$output_file"
-            echo "Captured $name panel"
         done
 
         echo "Screenshot capture complete"
+        echo "----------------------------------------"
     } | tee -a "$dir/elbencho.log"
 }
 
@@ -148,14 +169,14 @@ if [ -n "$run_description" ]; then
     echo "$run_description" > "${run_dir}/run_description.txt"
 fi
 
-# Start annotation
+# Start annotation and capture start time only if panels are being captured
 if [[ "$DRYRUN" != true ]]; then
     send_grafana_annotation "run_start" "Custom command execution started"
+    if [[ "$capture_panels" == "y" ]]; then
+        precise_start=$(date +%s%N)
+        ELBENCHO_START_TIME=$(( (precise_start / 1000000000 - 5) * 1000 ))
+    fi
 fi
-
-# Capture start time
-precise_start=$(date +%s%N)
-ELBENCHO_START_TIME=$(( (precise_start / 1000000000 - 5) * 1000 ))
 
 {
     echo "=========================================="
@@ -181,16 +202,19 @@ ELBENCHO_START_TIME=$(( (precise_start / 1000000000 - 5) * 1000 ))
     echo "----------------------------------------"
 } | tee "$log_file"
 
-# Capture end time
-precise_end=$(date +%s%N)
-ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
-
-# Log timing information
-echo "End Time (epoch): $precise_end" >> "$log_file"
-echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))" >> "$log_file"
-
+# Capture end time and panels only if requested
 if [[ "$DRYRUN" != true ]]; then
-    capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
+    if [[ "$capture_panels" == "y" ]]; then
+        precise_end=$(date +%s%N)
+        ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
+        
+        # Log timing information
+        echo "End Time (epoch): $precise_end" >> "$log_file"
+        echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))" >> "$log_file"
+        
+        # Capture the panels
+        capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
+    fi
     send_grafana_annotation "run_complete" "Custom command execution completed"
 fi
 
