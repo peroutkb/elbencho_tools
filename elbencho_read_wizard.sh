@@ -211,8 +211,7 @@ capture_grafana_panels() {
         "d0d26a47-41af-4d12-9e82-a939639239ee:2:ddn_power_metrics"
         "95:2:dgx11380_cpu_load"
         "95:10:dgx11380_ram_usage"
-        #"95:1093-clone-3:dgx11380_network_enp170s0f1np1"
-        #"95:1093-clone-5:dgx11380_network_enp41s0f1np1"
+        "95:1193:dgx11380_infiniband:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
         "95:1183:dgx11380_gpu_power_draw"
         "95:1184:dgx11380_gpu_utilization"
         "95:1185:dgx11380_gpu_mem_utilization")
