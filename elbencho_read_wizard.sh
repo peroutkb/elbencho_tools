@@ -197,7 +197,7 @@ capture_grafana_panels() {
     # Base URL for Grafana rendering
     local base_url="https://main-grafana-route-ai-grafana-main.apps.ocp01.pg.wwtatc.ai/render/d-solo"
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
-    local common_params="orgId=1&width=1000&height=500"
+    local common_params="orgId=1&width=1000&height=750"
 
     # Panel configurations: dashboard UID, panel id, name, variables (optional)
     local panels=(
