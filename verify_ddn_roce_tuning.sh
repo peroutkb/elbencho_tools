@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# List your Mellanox interfaces here
 NICS=("enp41s0f1np1" "enp170s0f1np1")
 
 echo "=== RoCEv2 Tuning Verification ==="
@@ -25,20 +24,19 @@ for nic in "${NICS[@]}"; do
   trust=$(mlnx_qos -i "$nic" 2>/dev/null | grep -i "Trust state")
   echo "Trust: ${trust:-Not available}"
 
-  # PFC Config (use dummy values to get info without changing anything)
-  pfc_info=$(mlnx_qos -i "$nic" --pfc 0,0,0,0,0,0,0,0 2>&1 | grep -E "Priority Flow Control|PFC enabled priorities")
-  echo -e "PFC:\n${pfc_info:-Not available}"
+  # PFC: Set known-safe config to reveal current state
+  pfc_enabled=$(mlnx_qos -i "$nic" --pfc 0,0,0,1,0,0,0,0 2>/dev/null | grep -A1 "PFC configuration" | grep "enabled")
+  echo "PFC Enabled Priorities: ${pfc_enabled:-Not available}"
 
-  # DCQCN RP/NP status
+  # DCQCN
   rp=$(cat /sys/class/net/"$nic"/ecn/roce_rp/enable/3 2>/dev/null)
   np=$(cat /sys/class/net/"$nic"/ecn/roce_np/enable/3 2>/dev/null)
   echo "DCQCN RP enabled (TC3): ${rp:-Not available}"
   echo "DCQCN NP enabled (TC3): ${np:-Not available}"
 
-  # Pause settings
+  # Pause
   pause=$(ethtool -a "$nic" 2>/dev/null | grep -E "Auto|RX|TX")
-  echo -e "Pause:\n${pause:-Not available}"
+  echo -e "Global Pause Settings:\n${pause:-Not available}"
 
   echo "----------------------------------"
 done
-
