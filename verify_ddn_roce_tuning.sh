@@ -24,8 +24,8 @@ for nic in "${NICS[@]}"; do
   trust=$(mlnx_qos -i "$nic" 2>/dev/null | grep -i "Trust state")
   echo "Trust: ${trust:-Not available}"
 
-  # PFC: Set known-safe config to reveal current state
-  pfc_enabled=$(mlnx_qos -i "$nic" --pfc 0,0,0,1,0,0,0,0 2>/dev/null | grep -A1 "PFC configuration" | grep "enabled")
+  # PFC Enabled Priorities from normal output
+  pfc_enabled=$(mlnx_qos -i "$nic" 2>/dev/null | awk '/PFC configuration/,/buffer/' | grep "enabled")
   echo "PFC Enabled Priorities: ${pfc_enabled:-Not available}"
 
   # DCQCN
@@ -40,3 +40,4 @@ for nic in "${NICS[@]}"; do
 
   echo "----------------------------------"
 done
+
