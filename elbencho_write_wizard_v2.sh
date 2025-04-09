@@ -241,7 +241,14 @@ capture_grafana_panels() {
         "95:1195:dgx11380_infiniband_GBps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
         "95:1183:dgx11380_gpu_power_draw"
         "95:1184:dgx11380_gpu_utilization"
-        "95:1185:dgx11380_gpu_mem_utilization")
+        "95:1185:dgx11380_gpu_mem_utilization"
+        "96:2:dgx11381_cpu_load"
+        "96:10:dgx11381_ram_usage"
+        "96:1193:dgx11381_infiniband_Gbps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "96:1195:dgx11381_infiniband_GBps:var-infiniband=mlx5_8&var-infiniband=mlx5_2"
+        "96:1183:dgx11381_gpu_power_draw"
+        "96:1184:dgx11381_gpu_utilization"
+        "96:1185:dgx11381_gpu_mem_utilization")
     {
         echo "----------------------------------------"
         echo "Capturing Grafana panel screenshots..."

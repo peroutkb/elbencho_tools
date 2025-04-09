@@ -28,11 +28,11 @@ for nic in "${NICS[@]}"; do
   pfc_enabled=$(mlnx_qos -i "$nic" 2>/dev/null | awk '/PFC configuration/,/buffer/' | grep "enabled")
   echo "PFC Enabled Priorities: ${pfc_enabled:-Not available}"
 
-  # DCQCN
+  # Data Center Quantized Congestion Notification AKA DCQCN
   rp=$(cat /sys/class/net/"$nic"/ecn/roce_rp/enable/3 2>/dev/null)
   np=$(cat /sys/class/net/"$nic"/ecn/roce_np/enable/3 2>/dev/null)
-  echo "DCQCN RP enabled (TC3): ${rp:-Not available}"
-  echo "DCQCN NP enabled (TC3): ${np:-Not available}"
+  echo "DCQCN ECN RP enabled (TC3): ${rp:-Not available}"
+  echo "DCQCN ECN NP enabled (TC3): ${np:-Not available}"
 
   # Pause
   pause=$(ethtool -a "$nic" 2>/dev/null | grep -E "Auto|RX|TX")
