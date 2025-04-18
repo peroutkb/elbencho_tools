@@ -168,8 +168,8 @@ capture_grafana_panels() {
 # Function to check if a directory is an NFS mount
 is_nfs_mount() {
     local dir="$1"
-    # Reverting to use mount command with grep
-    mount | grep -q "on $dir type nfs"
+    # Updated to check for both nfs and nfs4 types
+    mount | grep -qE "on $dir type nfs(4)?"
 }
 
 # Determine the base directory for run_dir
