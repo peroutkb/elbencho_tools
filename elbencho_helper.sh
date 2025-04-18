@@ -60,7 +60,7 @@ fi
 
 # Prompt for custom elbencho command
 echo ""
-echo "Enter your custom elbencho command."
+echo "Enter your elbencho command."
 echo "Example: elbencho /path/to/test --block 4k --threads 8 --write"
 read -e -p "Command: " custom_command
 
@@ -72,8 +72,8 @@ RUNTAG=${input_runtag:-$(hostname)}
 read -e -p "Enter a description for this run (optional): " run_description
 
 # Add prompt for Grafana panel capture
-read -e -p "Do you want to capture Grafana panels? (y/n, default: n): " capture_panels
-capture_panels=${capture_panels:-n}
+read -e -p "Do you want to capture Grafana panels? (y/n, default: y): " capture_panels
+capture_panels=${capture_panels:-y}
 
 read -e -p "Ready to Run? (y/n): " confirm
 if [[ "$confirm" != "y" ]]; then
@@ -241,4 +241,4 @@ if [[ "$DRYRUN" != true ]]; then
     send_grafana_annotation "run_complete" "Custom command execution completed"
 fi
 
-echo "Log file created: $log_file"
+echo "Results Directory: $run_dir"
