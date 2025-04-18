@@ -165,10 +165,25 @@ capture_grafana_panels() {
     } | tee -a "$dir/elbencho.log"
 }
 
-# Run the test
+# Function to check if a directory is an NFS mount
+is_nfs_mount() {
+    local dir="$1"
+    mount | grep -q " on $dir type nfs"
+}
+
+# Determine the base directory for run_dir
+base_dir="/mnt/aipg_elbencho_results"
+if [[ -d "$base_dir" && $(is_nfs_mount "$base_dir") ]]; then
+    echo "$base_dir is an NFS mount. Using it for run_dir."
+else
+    echo "$base_dir is not available or not an NFS mount. Falling back to /tmp."
+    base_dir="/tmp"
+fi
+
+# Run directory setup
 run_timestamp=$(date +"%Y%m%d%H%M%S")
-run_dir="${run_timestamp}"
-log_file="${run_dir}/elbencho.log"
+run_dir="$base_dir/$run_timestamp"
+log_file="$run_dir/elbencho.log"
 mkdir -p "$run_dir"
 
 # Save run description if provided
