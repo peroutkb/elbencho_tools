@@ -137,10 +137,10 @@ capture_grafana_panels() {
         "96:1184:dgx11381_gpu_utilization"
         "96:1185:dgx11381_gpu_mem_utilization")
     {
-        ## echo "----------------------------------------"
-        ## echo "Capturing Grafana panel screenshots..."
-        ## echo "Time window: from=$start_time to=$end_time"
-        ## echo ""
+        echo "----------------------------------------"
+        echo "Capturing Grafana panel screenshots..."
+        echo "Time window: from=$start_time to=$end_time"
+        echo ""
 
         for panel in "${panels[@]}"; do
             IFS=: read -r dashboard_uid panel_id name variables <<< "$panel"
@@ -152,16 +152,16 @@ capture_grafana_panels() {
                 panel_url="$panel_url&$variables"
             fi
 
-            ## echo "Panel: $name"
-            ## echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
-            ## echo ""
+            echo "Panel: $name"
+            echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
+            echo ""
 
             # Execute the curl command directly without eval
             curl -s -H "$auth_header" "$panel_url" # > "$output_file"
         done
 
-        ## echo "Screenshot capture complete"
-        ## echo "----------------------------------------"
+        echo "Screenshot capture complete"
+        echo "----------------------------------------"
     } | tee -a "$dir/elbencho.log"
 }
 
@@ -220,9 +220,9 @@ fi
         eval "$custom_command | ~/elbencho_graphite/elbencho_graphite.sh -s \"$GRAPHITE_SERVER\" -t \"$RUNTAG\"" 2>&1
     fi
 
-    ## echo ""
-    ## echo "Test Completed"
-    ## echo "----------------------------------------"
+    echo ""
+    echo "Test Completed"
+    echo "----------------------------------------"
 } | tee "$log_file"
 
 # Capture end time and panels only if requested
@@ -232,8 +232,8 @@ if [[ "$DRYRUN" != true ]]; then
         ELBENCHO_END_TIME=$(( (precise_end / 1000000000 + 5) * 1000 ))
         
         # Log timing information
-        ## echo "End Time (epoch): $precise_end" >> "$log_file"
-        ## echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))" >> "$log_file"
+         echo "End Time (epoch): $precise_end" >> "$log_file"
+         echo "Duration (seconds): $(( (precise_end - precise_start) / 1000000000 ))" >> "$log_file"
         
         # Capture the panels
         capture_grafana_panels "$run_dir" "$ELBENCHO_START_TIME" "$ELBENCHO_END_TIME"
