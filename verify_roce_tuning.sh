@@ -38,6 +38,14 @@ for nic in "${NICS[@]}"; do
   pause=$(ethtool -a "$nic" 2>/dev/null | grep -E "Auto|RX|TX")
   echo -e "Global Pause Settings:\n${pause:-Not available}"
 
+  # Transmit Queue Length
+  txqlen=$(ip link show "$nic" 2>/dev/null | grep -o 'qlen [0-9]*' | awk '{print $2}')
+  echo "TX Queue Length: ${txqlen:-Not available}"
+
+  # MTU
+  mtu=$(ip link show "$nic" 2>/dev/null | awk '/mtu/ {for(i=1;i<=NF;i++) if ($i=="mtu") print $(i+1)}')
+  echo "MTU: ${mtu:-Not available}"
+  
   echo "----------------------------------"
 done
 

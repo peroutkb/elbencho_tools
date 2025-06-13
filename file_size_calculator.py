@@ -1,5 +1,6 @@
 import math
 import readline  # Enables proper backspace handling on Unix-like systems
+import argparse
 
 def calculate_adjusted_file_size(total_volume_gib, num_files):
     """
@@ -25,7 +26,37 @@ def calculate_adjusted_file_size(total_volume_gib, num_files):
     
     return adjusted_size_mib
 
+def print_help():
+    print("""
+File Size Calculator
+-------------------
+Calculate the per-file size (in GiB, MiB, KiB) needed to distribute a total data volume across a specified number of files.
+
+Usage:
+  python file_size_calculator.py
+    (interactive mode, prompts for input)
+
+  python file_size_calculator.py -h | --help
+    (shows this help message)
+
+Description:
+  - Enter the total data volume in GiB when prompted.
+  - Enter one or more file counts (comma separated) when prompted.
+  - The script will output the required file size for each file count.
+
+Rounding:
+  - If the calculated file size is >= 4 MiB, it is rounded up to the nearest multiple of 4 MiB.
+  - If less than 4 MiB, it is rounded up to the nearest integer MiB.
+""")
+
 def main():
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('-h', '--help', action='store_true', help='Show this help message and exit')
+    args, unknown = parser.parse_known_args()
+    if args.help:
+        print_help()
+        return
+
     try:
         total_volume_gib = float(input("Enter the total data volume (GiB): "))
         file_counts_input = input("Enter the number(s) of files (comma separated if multiple): ")
