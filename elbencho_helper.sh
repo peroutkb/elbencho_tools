@@ -113,6 +113,14 @@ capture_grafana_panels() {
     local auth_header="Authorization: Bearer $GRAFANA_API_KEY"
     local common_params="orgId=1&width=1000&height=750"
 
+    # Control whether to log the actual API key. Default: masked.
+    local log_api_key="****"
+    if [[ "$LOG_GRAFANA_TOKEN" == "true" ]]; then
+        log_api_key="$GRAFANA_API_KEY"
+        echo "WARNING: Logging real Grafana API token in elbencho.log (LOG_GRAFANA_TOKEN=true)." | tee -a "$dir/elbencho.log"
+    fi
+    local log_auth_header="Authorization: Bearer $log_api_key"
+
     # Panel configurations: dashboard UID, panel id, name, variables (optional)
     local panels=(
         "b0b3d0e4-081b-44e7-8571-9e2fba555655:5:elbencho_read_iops"
@@ -153,11 +161,17 @@ capture_grafana_panels() {
             fi
 
             echo "Panel: $name"
-            echo "Command: curl -H \"$auth_header\" \"$panel_url\" > \"$output_file\""
+            # Log command; API key masked unless LOG_GRAFANA_TOKEN=true
+            echo "Command: curl -H \"$log_auth_header\" \"$panel_url\" -o \"$output_file\""
+            
+            # Download the PNG to file and surface HTTP errors
+            if curl -sS -f -L -H "$auth_header" "$panel_url" -o "$output_file"; then
+                echo "Saved to: $output_file"
+            else
+                status=$?
+                echo "ERROR: Failed to download panel '$name' (exit=$status). URL: $panel_url" >&2
+            fi
             echo ""
-
-            # Execute the curl command directly without eval
-            curl -s -H "$auth_header" "$panel_url" # > "$output_file"
         done
 
         echo "Screenshot capture complete"
