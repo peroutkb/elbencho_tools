@@ -94,10 +94,22 @@ send_grafana_annotation() {
     local timestamp=$(($(date +%s) * 1000))
     
     for DASHBOARD_ID in "${DASHBOARD_IDS[@]}"; do
+        # Build tags array including run tag when available
+        local tags_json="\"$tag\""
+        if [[ -n "$RUNTAG" ]]; then
+            tags_json="\"$tag\",\"$RUNTAG\""
+        fi
+
+        # Optionally append run tag to the text for easier searching
+        local text_with_tag="$text"
+        if [[ -n "$RUNTAG" ]]; then
+            text_with_tag="$text | runtag=$RUNTAG"
+        fi
+
         curl -s -X POST \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer $GRAFANA_API_KEY" \
-          -d "{\"dashboardId\": $DASHBOARD_ID, \"time\": $timestamp, \"isRegion\": false, \"tags\": [\"$tag\"], \"text\": \"$text\"}" \
+          -d "{\"dashboardId\": $DASHBOARD_ID, \"time\": $timestamp, \"isRegion\": false, \"tags\": [${tags_json}], \"text\": \"${text_with_tag}\"}" \
           "$GRAFANA_SERVER/api/annotations" >/dev/null
     done
 }
